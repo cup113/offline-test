@@ -1,33 +1,15 @@
 # offline-test
 
-This template should help get you started developing with Vue 3 in Vite.
+WIP
 
-## Recommended IDE Setup
+## User Interface Usage
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-pnpm build
-```
+1. Open the website.
+2. Go to the "Exam" page.
+3. Input Design Code.
+4. Deliver Design Code to the Examinee.
+5. Examinee completes the exam.
+6. Examinee submits exported JSON file.
+7. Go to the "Marking" page.
+8. Upload JSON files and start batch marking.
+9. Go to the "Stats" page to view the results.
