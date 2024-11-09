@@ -82,33 +82,36 @@ function change_checkbox(choice: string, payload: boolean) {
 </script>
 
 <template>
-  <div v-if="item.questions.length > 1" class="font-bold">({{ question.no }})</div>
-  <div class="text-orange-500 opacity-50">{{ question.score }}'</div>
-  <div v-if="qType === 'blank-text'">
-    <Input v-model="value.blankText" type="text" :default-value="value.blankText" @change="update_blank_text"
-      placeholder="Enter Text..."></Input>
-  </div>
-  <div v-else-if="qType === 'blank-number'">
-    <Input v-model="value.blankNumber" type="number" :default-value="value.blankNumber" @change="update_blank_number"
-      step="any" placeholder="Enter Number..."></Input>
-  </div>
-  <div v-else-if="qType === 'choice-single'">
-    <RadioGroup class="flex gap-4" :default-value="value.choiceSingle" @update:model-value="update_choice_single">
-      <div v-for="choice in question.choices" :key="choice">
-        <RadioGroupItem :value="choice" :id="get_choice_item_id(choice)"></RadioGroupItem>
+  <div class="flex flex-grow items-center gap-2">
+    <div v-if="item.questions.length > 1" class="font-bold">({{ question.no }})</div>
+    <div class="text-orange-400 text-sm font-bold">({{ question.score }}分)</div>
+    <div v-if="qType === 'blank-text'">
+      <Input v-model="value.blankText" type="text" :default-value="value.blankText" @change="update_blank_text"
+        class="h-7" :style="{ width: question.blankLength + 3 + 'em' }" placeholder="Enter Text..."></Input>
+    </div>
+    <div v-else-if="qType === 'blank-number'">
+      <Input v-model="value.blankNumber" type="number" :default-value="value.blankNumber" @change="update_blank_number"
+        class="h-7 w-20" step="any" placeholder="Enter Number..."></Input>
+    </div>
+    <div v-else-if="qType === 'choice-single'">
+      <RadioGroup class="flex gap-4" :default-value="value.choiceSingle" @update:model-value="update_choice_single">
+        <div v-for="choice in question.choices" :key="choice" class="flex gap-1">
+          <RadioGroupItem :value="choice" :id="get_choice_item_id(choice)"></RadioGroupItem>
+          <Label :for="get_choice_item_id(choice)">{{ choice }}</Label>
+        </div>
+      </RadioGroup>
+    </div>
+    <div v-else-if="qType === 'choice-multiple' || qType === 'choice-indeterminate'" class="flex gap-4">
+      <div v-for="choice in question.choices" :key="choice" :value="choice" class="flex items-center gap-1">
+        <Checkbox :id="get_choice_item_id(choice)" :checked="value.choiceMultiple[choice]"
+          @update:checked="(payload) => change_checkbox(choice, payload)">
+        </Checkbox>
         <Label :for="get_choice_item_id(choice)">{{ choice }}</Label>
       </div>
-    </RadioGroup>
-  </div>
-  <div v-else-if="qType === 'choice-multiple' || qType === 'choice-indeterminate'" class="flex gap-4">
-    <div v-for="choice in question.choices" :key="choice" :value="choice">
-      <Checkbox :id="get_choice_item_id(choice)" :checked="value.choiceMultiple[choice]" @update:checked="(payload) => change_checkbox(choice, payload)">
-      </Checkbox>
-      <Label :for="get_choice_item_id(choice)">{{ choice }}</Label>
     </div>
-  </div>
-  <div v-else-if="qType === 'multiple-line-text'">
-    <Textarea v-model="value.blankText" :default-value="value.blankText" @change="update_multiple_line_text"
-      placeholder="Enter Text..."></Textarea>
+    <div v-else-if="qType === 'multiple-line-text'" class="flex-grow">
+      <Textarea v-model="value.blankText" :default-value="value.blankText" @change="update_multiple_line_text"
+        placeholder="Enter Text..." :style="{ height: question.blankLength + 'em' }"></Textarea>
+    </div>
   </div>
 </template>

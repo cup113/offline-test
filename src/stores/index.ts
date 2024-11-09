@@ -21,10 +21,12 @@ export class Item {
   public type: ItemType;
   public content: string;
   public questions: Question[];
+  public score: number;
 
-  constructor(codeLine: string) {
+  constructor(codeLine: string, update?: (score: number) => void) {
     const [strNo, lineText] = split_once(codeLine, ' ');
     this.no = parseInt(strNo);
+    this.score = 0;
     if (isNaN(this.no)) {
       throw new Error(`Invalid question number ${strNo}: ${codeLine}`);
     }
@@ -51,6 +53,12 @@ export class Item {
     this.type = 'question';
     this.content = '';
     this.questions = questionCodes.map((codeQuestion, index) => new Question(index + 1, codeQuestion));
+    this.questions.forEach(question => {
+      this.score += question.score;
+    });
+    if (update) {
+      update(this.score);
+    }
   }
 }
 
@@ -108,7 +116,7 @@ export class Question {
         if (type[1] !== 'T') {
           throw new Error(`Invalid multiple type ${type[1]}: ${codeQuestion}`);
         }
-        this.blankLength = 0;
+        this.blankLength = parseInt(paramStr);
         this.choices = [];
         this.type = 'multiple-line-text';
         break;
@@ -122,7 +130,7 @@ export const useStore = defineStore('index', () => {
   const items = reactive(new Array<Item>());
   const examCode = useLocalStorage('OT_exam_code', '');
   let values = useLocalStorage('OT_exam_values_default', {} as Record<string, Record<string, string>>);
-  const answerScores = useLocalStorage('OT_scores', {} as Record<string, Record<string, number>>);
+  const answerScores = useLocalStorage('OT_scores', {} as Record<string, Record<string, [number, string]>>);
   const name = useLocalStorage('OT_exam_name', '');
   const id = ref('');
   const students = useLocalStorage('OT_students', new Array<{
@@ -157,12 +165,17 @@ export const useStore = defineStore('index', () => {
       items.pop();
     }
     const lines = code.split('\n');
+    let currentHeading: Item | undefined = undefined;
     for (const line of lines) {
       if (line.trim() === '') {
         continue;
       }
       try {
-        const item = new Item(line);
+        const item = new Item(line, score => {
+          if (currentHeading) {
+            currentHeading.score += score;
+          }
+        });
         switch (item.type) {
           case 'id':
             if (id.value !== item.content) {
@@ -171,6 +184,9 @@ export const useStore = defineStore('index', () => {
             }
             break;
           case 'heading':
+            items.push(item);
+            currentHeading = item;
+            break;
           case 'name':
             items.push(item);
             break;

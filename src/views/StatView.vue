@@ -13,7 +13,7 @@ const students = computed(() => {
   store.items.forEach((item) => {
     store.answers[item.no].forEach((students, answer) => {
       students.forEach(student => {
-        result[student] += (store.answerScores[item.no] ?? {})[answer] ?? 0;
+        result[student] += (store.answerScores[item.no] ?? {})[answer]?.[0] ?? 0;
       });
     });
   });
@@ -35,22 +35,21 @@ const overallStat = computed(() => {
 </script>
 
 <template>
-  <div>
-    <h1>Statistics</h1>
+  <div class="px-4 py-2">
+    <h2 class="text-2xl font-bold text-center mb-2">答题统计</h2>
     <div class="text-center">
-      <div>Full Score: {{ overallStat.full }}</div>
-      <div>Average: {{ overallStat.average }}</div>
-      <div>Median: {{ overallStat.median }}</div>
-      <div>Max: {{ overallStat.max }}</div>
-      <div>Min: {{ overallStat.min }}</div>
-      <div>Standard Deviation: {{ overallStat.std }}</div>
+      <div>满分: <b>{{ overallStat.full }}</b></div>
+      <div>平均分: <b>{{ overallStat.average.toFixed(2) }}</b>（得分率：<b>{{ ((overallStat.average ?? 0) / (overallStat.full ??
+        1) * 100).toFixed(2) }}%</b>）；标准差：<b>{{ overallStat.std.toFixed(2) }}</b></div>
+      <div>最高分: <b>{{ overallStat.max }}</b>；中位分: <b>{{ overallStat.median }}</b>；最低分: <b>{{ overallStat.min }}</b>
+      </div>
     </div>
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Rank</TableHead>
-          <TableHead>Student Name</TableHead>
-          <TableHead>Score</TableHead>
+          <TableHead>排名</TableHead>
+          <TableHead>学生姓名</TableHead>
+          <TableHead>分数</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

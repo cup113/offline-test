@@ -7,7 +7,7 @@ const routes = router.options.routes;
 </script>
 
 <template>
-  <header>
+  <header class="border-b-2 border-slate-200">
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem v-for="route in routes" :key="route.name">

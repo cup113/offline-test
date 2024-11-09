@@ -7,9 +7,9 @@
 4 CS/1,1,2,3,4
 5 CI/2,A,B,C,D,E CI/2,A,B,C,D,E
 6 BN/2,3 BN/2,3 BN/2,3
-7 CM/2,A,B,C,D,E,F
+7 CM/4,A,B,C,D,E,F
 0 H 二、文档查询
 8 CI/5,A,B,C,D,E
 9 CI/4,A,B,C,D
 0 H 三、代码调试
-10 MT/20
+10 MT/20,5
