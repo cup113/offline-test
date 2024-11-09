@@ -205,6 +205,10 @@ export const useStore = defineStore('index', () => {
   }, { immediate: true });
 
   function export_answers() {
+    if (name.value.trim().length === 0) {
+      alert('请输入你的姓名。');
+      return;
+    }
     const json = JSON.stringify({
       name: name.value,
       answers: values.value,

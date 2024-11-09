@@ -31,7 +31,7 @@ const store = useStore();
             <span class="text-base text-yellow-600 pl-2">({{ item.score }}分)</span>
           </h3>
           <div v-else-if="item.type === 'name'" class="flex flex-grow gap-2 items-center justify-center">
-            <div class="w-16 font-bold">姓名：</div><Input v-model="store.name" placeholder="Enter your name..."></Input>
+            <div class="w-16 font-bold">姓名：</div><Input v-model="store.name" placeholder="请输入你的姓名..."></Input>
           </div>
           <div v-else-if="item.type === 'question'" class="flex flex-col gap-2 flex-grow">
             <Question v-for="question in item.questions" :key="question.no" :question="question" :item="item">

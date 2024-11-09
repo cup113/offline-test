@@ -87,11 +87,11 @@ function change_checkbox(choice: string, payload: boolean) {
     <div class="text-orange-400 text-sm font-bold">({{ question.score }}分)</div>
     <div v-if="qType === 'blank-text'">
       <Input v-model="value.blankText" type="text" :default-value="value.blankText" @change="update_blank_text"
-        class="h-7" :style="{ width: question.blankLength + 3 + 'em' }" placeholder="Enter Text..."></Input>
+        class="h-7" :style="{ width: question.blankLength + 3 + 'em' }" placeholder="..."></Input>
     </div>
     <div v-else-if="qType === 'blank-number'">
       <Input v-model="value.blankNumber" type="number" :default-value="value.blankNumber" @change="update_blank_number"
-        class="h-7 w-20" step="any" placeholder="Enter Number..."></Input>
+        class="h-7 w-20" step="any" placeholder="..."></Input>
     </div>
     <div v-else-if="qType === 'choice-single'">
       <RadioGroup class="flex gap-4" :default-value="value.choiceSingle" @update:model-value="update_choice_single">
@@ -111,7 +111,7 @@ function change_checkbox(choice: string, payload: boolean) {
     </div>
     <div v-else-if="qType === 'multiple-line-text'" class="flex-grow">
       <Textarea v-model="value.blankText" :default-value="value.blankText" @change="update_multiple_line_text"
-        placeholder="Enter Text..." :style="{ height: question.blankLength + 'em' }"></Textarea>
+        placeholder="..." :style="{ height: question.blankLength + 'em' }"></Textarea>
     </div>
   </div>
 </template>
