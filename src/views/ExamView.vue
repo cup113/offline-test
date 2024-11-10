@@ -7,6 +7,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import Question from '@/components/Question.vue';
 
 const store = useStore();
+
+function on_import(event: Event) {
+  const files = (event.target as HTMLInputElement).files;
+  files?.item(0)?.text()?.then(text => store.import_answers(text));
+}
 </script>
 
 <template>
@@ -39,7 +44,14 @@ const store = useStore();
           </div>
         </div>
       </div>
-      <Button @click="store.export_answers()" variant="outline" class="text-xl font-bold text-lime-700">导出答案</Button>
+      <div class="w-full flex gap-4">
+        <Button @click="store.export_answers()" variant="outline"
+          class="flex-grow text-xl font-bold text-lime-700">导出答案</Button>
+        <div class="flex gap-2 items-center border px-8 border-collapse rounded-lg">
+          <div class="w-32">导入答案</div>
+          <Input class="max-w-80" @click="on_import" type="file" accept=".json" />
+        </div>
+      </div>
     </div>
   </div>
 </template>

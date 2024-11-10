@@ -6,14 +6,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { reactive, computed } from 'vue';
+import { reactive, computed, onMounted } from 'vue';
+
+const MULTIPLE_SEPARATOR = '|';
 
 const props = defineProps<{
   question: Question,
   item: Item,
 }>();
 const store = useStore();
-const MULTIPLE_SEPARATOR = '|';
 
 function get_choice_item_id(value: string) {
   return `choice-item-${props.item.no}-${props.question.no}-${value}`;
@@ -27,51 +28,64 @@ const value = reactive({
   choiceMultiple: {} as Record<string, boolean>,
 });
 
-const originalValue = store.get_value(props.item.no, props.question.no);
-switch (qType.value) {
-  case 'blank-text':
-    value.blankText = originalValue || '';
-    break;
-  case 'blank-number':
-    value.blankNumber = parseFloat(originalValue || '0');
-    break;
-  case 'choice-single': {
-    value.choiceSingle = originalValue || '';
-    break;
+onMounted(() => {
+  const originalValue = store.get_exam_value(props.item.no, props.question.no);
+  if (!originalValue) {
+    return;
   }
-  case 'choice-multiple':
-  case 'choice-indeterminate': {
-    const choices = originalValue?.split(MULTIPLE_SEPARATOR) || [];
-    for (const choice of choices) {
-      value.choiceMultiple[choice] = true;
+  switch (qType.value) {
+    case 'blank-text':
+      value.blankText = originalValue || '';
+      break;
+    case 'blank-number':
+      value.blankNumber = parseFloat(originalValue || '0');
+      break;
+    case 'choice-single': {
+      value.choiceSingle = originalValue || '';
+      break;
     }
-    break;
+    case 'choice-multiple':
+    case 'choice-indeterminate': {
+      const choices = originalValue?.split(MULTIPLE_SEPARATOR) || [];
+      for (const choice of choices) {
+        value.choiceMultiple[choice] = true;
+      }
+      break;
+    }
+    case 'multiple-line-text':
+      value.blankText = originalValue || '';
+      break;
   }
-  case 'multiple-line-text':
-    value.blankText = originalValue || '';
-    break;
+});
+
+function update_value(val: string) {
+  console.log('update_value', val);
+  store.set_exam_value(props.item.no, props.question.no, val).mapErr(e => {
+    console.error(e);
+    alert(e);
+  });
 }
 
 function update_blank_text() {
-  store.update_value(props.item.no, props.question.no, value.blankText);
+  update_value(value.blankText);
 }
 
 function update_blank_number() {
-  store.update_value(props.item.no, props.question.no, value.blankNumber.toString());
+  update_value(value.blankNumber.toString());
 }
 
 function update_multiple_line_text() {
-  store.update_value(props.item.no, props.question.no, value.blankText);
+  update_value(value.blankText.trim());
 }
 
 function update_choice_single(payload: string) {
   value.choiceSingle = payload;
-  store.update_value(props.item.no, props.question.no, value.choiceSingle);
+  update_value(value.choiceSingle);
 }
 
 function update_choice_multiple() {
-  const choices = Object.entries(value.choiceMultiple).filter(([_, checked]) => checked).map(([choice, _]) => choice).join(MULTIPLE_SEPARATOR);
-  store.update_value(props.item.no, props.question.no, choices);
+  const choices = Object.entries(value.choiceMultiple).filter(([, checked]) => checked).map(([choice, _]) => choice).join(MULTIPLE_SEPARATOR);
+  update_value(choices);
 }
 
 function change_checkbox(choice: string, payload: boolean) {

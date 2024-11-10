@@ -2,22 +2,21 @@
 import { Table, TableHeader, TableRow, TableCell, TableHead, TableBody } from '@/components/ui/table';
 import { useStore } from '@/stores';
 import { computed } from 'vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const store = useStore();
 
 const students = computed(() => {
-  const result: Record<string, number> = {};
-  store.students.forEach((student) => {
-    result[student.name] = 0;
-  });
+  const result = new Map<string, number>();
   store.items.forEach((item) => {
-    store.answers[item.no].forEach((students, answer) => {
-      students.forEach(student => {
-        result[student] += (store.answerScores[item.no] ?? {})[answer]?.[0] ?? 0;
+    store.get_item_mark_results(item.no).forEach(({ names, score }) => {
+      names.forEach((name) => {
+        result.set(name, (result.get(name) ?? 0) + (score || 0));
       });
     });
   });
-  return Object.entries(result).map(([name, score]) => ({ name, score }));
+  return Array.from(result.entries()).map(([name, score]) => ({ name, score }));
 });
 
 const overallStat = computed(() => {
@@ -32,6 +31,11 @@ const overallStat = computed(() => {
   );
   return { full, average, median, max, min, std };
 });
+
+function on_import(event: Event) {
+  const files = (event.target as HTMLInputElement).files;
+  files?.item(0)?.text()?.then(text => store.import_marking(text));
+}
 </script>
 
 <template>
@@ -60,5 +64,12 @@ const overallStat = computed(() => {
         </TableRow>
       </TableBody>
     </Table>
+    <div class="flex gap-8 items-center">
+      <Button @click="store.export_marking()">导出阅卷结果</Button>
+      <div class="flex gap-2 flex-grow items-center border rounded-lg px-4 border-collapse">
+        <div class="w-32 text-gray-500">导入阅卷结果</div>
+        <Input type="file" accept=".json" @change="on_import" />
+      </div>
+    </div>
   </div>
 </template>

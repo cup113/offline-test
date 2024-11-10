@@ -18,17 +18,20 @@ const currentFullScore = computed(() => {
   const total = scores.reduce((acc, cur) => acc + cur, 0);
   return total;
 });
+const currentResults = computed(() => store.get_item_mark_results(current.value));
+
 const currentScoreStat = computed(() => {
   if (currentItem.value === undefined) {
     return {};
   }
 
   const scores: number[] = [];
-  store.answers[current.value].forEach((names, answer) => {
-    const score = store.answerScores[current.value][answer]?.[0] ?? 0;
-    for (let i = 0; i < names.length; i++) {
-      scores.push(score);
-    }
+  const results = store.get_item_mark_results(current.value);
+  if (!results.length) {
+    return {};
+  }
+  results.forEach(({ names, score }) => {
+    names.forEach(() => scores.push(score || 0));
   });
 
   const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
@@ -67,7 +70,26 @@ function handle_stu_file(event: Event) {
     store.students.splice(0, store.students.length);
     Array.from(target.files).forEach(file => {
       file.text().then(text => {
-        store.students.push(JSON.parse(text));
+        const student = JSON.parse(text) as { name: string, answers: string[][] };
+        store.students.push(student);
+        student.answers.forEach((answers, i) => {
+          if (store.markResults.length <= i) {
+            store.markResults.push([]);
+          }
+          const answer = answers.map(line => line.trim()).map(line => line ? line : '<EMPTY>').join('\n');
+          if (!store.markResults[i].find(result => result.answer === answer)) {
+            store.markResults[i].push({
+              names: [student.name],
+              answer,
+              comment: '',
+              score: undefined,
+            });
+          }
+          const index = store.markResults[i].findIndex(result => result.answer === answer);
+          if (!store.markResults[i][index].names.includes(student.name)) {
+            store.markResults[i][index].names.push(student.name);
+          }
+        })
       });
     });
   }
@@ -80,18 +102,18 @@ function handle_stu_file(event: Event) {
       <div class="w-32">考生答题文件</div><Input type="file" multiple @change="handle_stu_file"></Input>
     </div>
     <div class="flex flex-wrap justify-center gap-4">
-      <Button v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no"
-        :class="{ 'bg-green-800': Object.keys(store.answerScores[item.no] ?? {}).length !== 0, 'bg-green-500': current === item.no }">
+      <Button v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no" :class="{ 'bg-green-600': current === item.no }">
         {{ item.no }}</Button>
     </div>
     <div>
       <div v-if="currentItem !== undefined" class="text-center">
         <div>满分: <b>{{ fullScoreDisplay }}</b></div>
-        <div>平均分: <b>{{ currentScoreStat.average?.toFixed(2) }}</b>（得分率：<b>{{ ((currentScoreStat.average ?? 0) / (currentFullScore ?? 1) * 100).toFixed(2) }}%</b>）</div>
-        <div>最高分: <b>{{ currentScoreStat.max }}</b>；中位分: <b>{{ currentScoreStat.median }}</b>；最低分: <b>{{ currentScoreStat.min }}</b></div>
+        <div>平均分: <b>{{ currentScoreStat.average?.toFixed(2) }}</b>（得分率：<b>{{ ((currentScoreStat.average ?? 0) /
+          (currentFullScore ?? 1) * 100).toFixed(2) }}%</b>）</div>
+        <div>最高分: <b>{{ currentScoreStat.max }}</b>；中位分: <b>{{ currentScoreStat.median }}</b>；最低分: <b>{{
+          currentScoreStat.min }}</b></div>
       </div>
       <Table>
-        <TableCaption>Students Marking</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>姓名</TableHead>
@@ -101,8 +123,8 @@ function handle_stu_file(event: Event) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <MarkAnswer v-for="answer in store.answers[current]" :answer="answer[0]" :current="current"
-            :full-score="currentFullScore" :names="answer[1]" :key="current + answer[0]"></MarkAnswer>
+          <MarkAnswer v-for="markResult in currentResults" :mark-result="markResult" :no="current"
+            :full-score="currentFullScore" :key="current + markResult.answer"></MarkAnswer>
         </TableBody>
       </Table>
     </div>
