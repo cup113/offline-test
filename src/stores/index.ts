@@ -4,6 +4,7 @@ import { useLocalStorage, useArrayFilter } from '@vueuse/core';
 import { downloadText } from 'download.js';
 import { Maybe } from 'true-myth/maybe';
 import { Result } from 'true-myth/result';
+import { z } from 'zod';
 
 export type ItemType = 'id' | 'heading' | 'name' | 'question'
 export type QuestionType = 'blank-text' | 'blank-number' | 'choice-single' | 'choice-multiple' | 'choice-indeterminate' | 'multiple-line-text';
@@ -249,6 +250,39 @@ export const useStore = defineStore('index', () => {
     examCode.value = data.examCode;
   }
 
+  function add_student(fileText: string) {
+    const schema = z.object({
+      name: z.string(),
+      answers: z.array(z.array(z.string())),
+    })
+    const student = schema.parse(JSON.parse(fileText));
+    students.value.push(student);
+    student.answers.forEach((answers, i) => {
+      if (markResults.value.length <= i) {
+        markResults.value.push([]);
+      }
+      const answer = answers.map(line => line.trim()).map(line => line ? line : '<EMPTY>').join('\n');
+      const index = markResults.value[i].findIndex(result => result.answer === answer);
+      if (index === -1) {
+        markResults.value[i].push({
+          names: [student.name],
+          answer,
+          comment: '',
+          score: undefined,
+        });
+      } else {
+        markResults.value[i].forEach((result, j) => {
+          if (result.names.includes(student.name)) {
+            markResults.value[i][j].names.push(student.name);
+          }
+        });
+        if (!markResults.value[i][index].names.includes(student.name)) {
+          markResults.value[i][index].names.push(student.name);
+        }
+      }
+    })
+  }
+
   function get_exam_value(itemNo: number, questionNo: number) {
     const index = questionItems.value.findIndex(item => item.no === itemNo);
     if (index === -1) {
@@ -292,6 +326,102 @@ export const useStore = defineStore('index', () => {
     return Result.ok(true);
   }
 
+  const markedStudents = computed(() => {
+    const result = new Map<string, number>();
+    items.forEach((item) => {
+      get_item_mark_results(item.no).forEach(({ names, score }) => {
+        names.forEach((name) => {
+          result.set(name, (result.get(name) ?? 0) + (score || 0));
+        });
+      });
+    });
+    let prevRank = 0;
+    let prevScore: number | undefined = undefined;
+    return Array.from(result.entries()).map(([name, score]) => ({ name, score })).sort((a, b) => b.score - a.score).map((student, index) => {
+      let rank = index + 1;
+      if (prevScore === student.score) {
+        rank = prevRank;
+      } else {
+        prevRank = rank;
+        prevScore = student.score;
+      }
+      return { ...student, rank };
+    });
+  });
+
+  const questionStats = computed(() => {
+    const stats = new Map<number, {
+      item: Item;
+      results: MarkResult[];
+      scores: number[];
+      fullScore: number;
+      max: number;
+      min: number;
+      average: number;
+      std: number;
+      discrimination: number | null;
+      markProgress: number;
+    }>();
+
+    questionItems.value.forEach((item) => {
+      const markResults = get_item_mark_results(item.no);
+      const scores = markResults.map(({ score }) => score || 0);
+      const fullScore = item.questions.reduce((acc, cur) => acc + cur.score, 0);
+      const max = Math.max.apply(null, scores);
+      const min = Math.min.apply(null, scores);
+      const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
+      const std = Math.sqrt(
+        scores.reduce((acc, cur) => acc + Math.pow(cur - average, 2), 0) / scores.length
+      );
+      const discrimination = (() => {
+        if (scores.length < 4) {
+          return null;
+        }
+        const topStudents = markedStudents.value.slice(0, Math.floor(scores.length / 4));
+        const bottomStudents = markedStudents.value.slice(scores.length - Math.floor(scores.length / 4));
+        let topSum = 0;
+        let bottomSum = 0;
+        markResults.forEach(({ names, score }) => {
+          names.forEach(name => {
+            if (topStudents.some(s => s.name === name)) {
+              topSum += score ?? 0;
+            } else if (bottomStudents.some(s => s.name === name)) {
+              bottomSum += score ?? 0;
+            }
+          })
+        });
+        return (topSum / topStudents.length - bottomSum / bottomStudents.length) / fullScore * 2;
+      })();
+      const markProgress = markResults.filter(({ score }) => score !== undefined).length / markResults.length;
+      stats.set(item.no, {
+        item,
+        results: markResults,
+        fullScore,
+        scores,
+        max,
+        min,
+        average,
+        std,
+        discrimination,
+        markProgress,
+      });
+    });
+    return stats;
+  })
+
+  const overallStat = computed(() => {
+    const full = items.reduce((acc, cur) => acc + cur.questions.reduce((acc, cur) => acc + cur.score, 0), 0);
+    const scores = markedStudents.value.map((student) => student.score);
+    const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
+    const median = scores.sort((a, b) => a - b)[Math.floor(scores.length / 2)];
+    const max = Math.max.apply(null, scores);
+    const min = Math.min.apply(null, scores);
+    const std = Math.sqrt(
+      scores.reduce((acc, cur) => acc + Math.pow(cur - average, 2), 0) / scores.length
+    );
+    return { full, average, median, max, min, std };
+  });
+
   return {
     examCode,
     markResults,
@@ -301,10 +431,14 @@ export const useStore = defineStore('index', () => {
     students,
     name,
     id,
+    markedStudents,
+    questionStats,
+    overallStat,
     export_answers,
     import_answers,
     export_marking,
     import_marking,
+    add_student,
     get_item_mark_results,
     get_exam_value,
     set_exam_value,

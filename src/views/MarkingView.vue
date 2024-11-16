@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Table, TableCaption, TableHeader, TableRow, TableBody, TableHead } from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableBody, TableHead } from '@/components/ui/table';
 import { computed, ref } from 'vue';
 import { useStore, Item } from '@/stores';
 import MarkAnswer from '@/components/MarkAnswer.vue';
@@ -9,59 +9,18 @@ import MarkAnswer from '@/components/MarkAnswer.vue';
 const store = useStore();
 
 const current = ref(1);
-const currentItem = computed(() => store.items.find(item => item.no === current.value));
-const currentFullScore = computed(() => {
-  if (currentItem.value === undefined) {
-    return 0;
-  }
-  const scores = currentItem.value.questions.map(question => question.score);
-  const total = scores.reduce((acc, cur) => acc + cur, 0);
-  return total;
-});
-const currentResults = computed(() => store.get_item_mark_results(current.value));
 
-const currentScoreStat = computed(() => {
-  if (currentItem.value === undefined) {
-    return {};
-  }
+const currentStat = computed(() => store.questionStats.get(current.value));
 
-  const scores: number[] = [];
-  const results = store.get_item_mark_results(current.value);
-  if (!results.length) {
-    return {};
-  }
-  results.forEach(({ names, score }) => {
-    names.forEach(() => scores.push(score || 0));
-  });
-
-  const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
-  const max = Math.max.apply(null, scores);
-  const min = Math.min.apply(null, scores);
-  const median = (() => {
-    const sorted = scores.slice().sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    if (sorted.length % 2 === 0) {
-      return (sorted[mid - 1] + sorted[mid]) / 2;
-    }
-    return sorted[mid];
-  })();
-
-  return {
-    average,
-    max,
-    min,
-    median,
-  };
-});
 const fullScoreDisplay = computed(() => {
-  if (currentItem.value === undefined) {
+  if (currentStat.value === undefined) {
     return '';
   }
-  const scores = currentItem.value.questions.map(question => question.score);
+  const scores = currentStat.value.scores;
   if (scores.length <= 1) {
-    return currentFullScore.value.toString();
+    return currentStat.value.fullScore.toString();
   }
-  return `${scores.join(' + ')} = ${currentFullScore.value}`
+  return `${scores.join(' + ')} = ${currentStat.value.fullScore}`;
 });
 
 function handle_stu_file(event: Event) {
@@ -70,26 +29,11 @@ function handle_stu_file(event: Event) {
     store.students.splice(0, store.students.length);
     Array.from(target.files).forEach(file => {
       file.text().then(text => {
-        const student = JSON.parse(text) as { name: string, answers: string[][] };
-        store.students.push(student);
-        student.answers.forEach((answers, i) => {
-          if (store.markResults.length <= i) {
-            store.markResults.push([]);
-          }
-          const answer = answers.map(line => line.trim()).map(line => line ? line : '<EMPTY>').join('\n');
-          if (!store.markResults[i].find(result => result.answer === answer)) {
-            store.markResults[i].push({
-              names: [student.name],
-              answer,
-              comment: '',
-              score: undefined,
-            });
-          }
-          const index = store.markResults[i].findIndex(result => result.answer === answer);
-          if (!store.markResults[i][index].names.includes(student.name)) {
-            store.markResults[i][index].names.push(student.name);
-          }
-        })
+        try {
+          store.add_student(text);
+        } catch (e) {
+          console.error(e);
+        }
       });
     });
   }
@@ -102,16 +46,21 @@ function handle_stu_file(event: Event) {
       <div class="w-32">考生答题文件</div><Input type="file" multiple @change="handle_stu_file"></Input>
     </div>
     <div class="flex flex-wrap justify-center gap-4">
-      <Button v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no" :class="{ 'bg-green-600': current === item.no }">
-        {{ item.no }}</Button>
+      <div v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no" class="flex flex-col items-center" >
+        <Button :class="{ 'bg-green-600': current === item.no }">
+          {{ item.no }}
+        </Button>
+        <span>{{ ((store.questionStats.get(item.no)?.average ?? 0) / (store.questionStats.get(item.no)?.fullScore ?? 1) * 100).toFixed(0) }}%</span>
+        <span>{{ store.questionStats.get(item.no)?.markProgress === 1 ? '已阅' : '未阅' }}</span>
+      </div>
     </div>
     <div>
-      <div v-if="currentItem !== undefined" class="text-center">
+      <div v-if="currentStat !== undefined" class="text-center">
         <div>满分: <b>{{ fullScoreDisplay }}</b></div>
-        <div>平均分: <b>{{ currentScoreStat.average?.toFixed(2) }}</b>（得分率：<b>{{ ((currentScoreStat.average ?? 0) /
-          (currentFullScore ?? 1) * 100).toFixed(2) }}%</b>）</div>
-        <div>最高分: <b>{{ currentScoreStat.max }}</b>；中位分: <b>{{ currentScoreStat.median }}</b>；最低分: <b>{{
-          currentScoreStat.min }}</b></div>
+        <div>平均分: <b>{{ currentStat.average?.toFixed(2) }}</b>（得分率：<b>{{ ((currentStat.average ?? 0) /
+          (currentStat.fullScore ?? 1) * 100).toFixed(2) }}%</b>）；标准差： <b>{{ currentStat.std?.toFixed(2) }}</b></div>
+        <div>最高分: <b>{{ currentStat.max }}</b>；最低分: <b>{{ currentStat.min }}</b>；区分度：<b>{{
+          currentStat.discrimination?.toFixed(2) ?? '/' }} </b></div>
       </div>
       <Table>
         <TableHeader>
@@ -123,8 +72,8 @@ function handle_stu_file(event: Event) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <MarkAnswer v-for="markResult in currentResults" :mark-result="markResult" :no="current"
-            :full-score="currentFullScore" :key="current + markResult.answer"></MarkAnswer>
+          <MarkAnswer v-for="markResult in currentStat?.results" :mark-result="markResult" :no="current"
+            :full-score="currentStat?.fullScore ?? 0" :key="current + markResult.answer"></MarkAnswer>
         </TableBody>
       </Table>
     </div>
