@@ -5,6 +5,7 @@ import { downloadText } from 'download.js';
 import { Maybe } from 'true-myth/maybe';
 import { Result } from 'true-myth/result';
 import { z } from 'zod';
+import { min, max, mean, medianSorted, standardDeviation, sum, sampleCorrelation, average } from 'simple-statistics';
 
 export type ItemType = 'id' | 'heading' | 'name' | 'question'
 export type QuestionType = 'blank-text' | 'blank-number' | 'choice-single' | 'choice-multiple' | 'choice-indeterminate' | 'multiple-line-text';
@@ -296,7 +297,12 @@ export const useStore = defineStore('index', () => {
     if (index === -1) {
       return Result.err(`Item ${itemNo} not found`);
     }
-    examValues.value[index][questionNo - 1] = value;
+    try {
+      examValues.value[index][questionNo - 1] = value;
+    }
+    catch (e) {
+      return Result.err(`Invalid value ${value}: ${e}`);
+    }
     return Result.ok();
   }
 
@@ -367,30 +373,18 @@ export const useStore = defineStore('index', () => {
       const markResults = get_item_mark_results(item.no);
       const scores = markResults.map(({ score }) => score || 0);
       const fullScore = item.questions.reduce((acc, cur) => acc + cur.score, 0);
-      const max = Math.max.apply(null, scores);
-      const min = Math.min.apply(null, scores);
-      const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
-      const std = Math.sqrt(
-        scores.reduce((acc, cur) => acc + Math.pow(cur - average, 2), 0) / scores.length
-      );
       const discrimination = (() => {
-        if (scores.length < 4) {
+        if (scores.length < 2) {
           return null;
         }
-        const topStudents = markedStudents.value.slice(0, Math.floor(scores.length / 4));
-        const bottomStudents = markedStudents.value.slice(scores.length - Math.floor(scores.length / 4));
-        let topSum = 0;
-        let bottomSum = 0;
+        const studentsMap = new Map(markedStudents.value.map(s => [s.name, s.score] as const));
+        const scoreArr = new Array<[number, number]>(); // [totalScore, thisScore]
         markResults.forEach(({ names, score }) => {
           names.forEach(name => {
-            if (topStudents.some(s => s.name === name)) {
-              topSum += score ?? 0;
-            } else if (bottomStudents.some(s => s.name === name)) {
-              bottomSum += score ?? 0;
-            }
-          })
+            scoreArr.push([studentsMap.get(name) ?? 0, score ?? 0] as const);
+          });
         });
-        return (topSum / topStudents.length - bottomSum / bottomStudents.length) / fullScore * 2;
+        return sampleCorrelation(scoreArr.map(s => s[0]), scoreArr.map(s => s[1]));
       })();
       const markProgress = markResults.filter(({ score }) => score !== undefined).length / markResults.length;
       stats.set(item.no, {
@@ -398,10 +392,10 @@ export const useStore = defineStore('index', () => {
         results: markResults,
         fullScore,
         scores,
-        max,
-        min,
-        average,
-        std,
+        max: max(scores.length ? scores : [0]),
+        min: min(scores.length ? scores : [0]),
+        average: average(scores.length ? scores : [0]),
+        std: standardDeviation(scores.length ? scores : [0]),
         discrimination,
         markProgress,
       });
@@ -412,14 +406,14 @@ export const useStore = defineStore('index', () => {
   const overallStat = computed(() => {
     const full = items.reduce((acc, cur) => acc + cur.questions.reduce((acc, cur) => acc + cur.score, 0), 0);
     const scores = markedStudents.value.map((student) => student.score);
-    const average = scores.reduce((acc, cur) => acc + cur, 0) / scores.length;
-    const median = scores.sort((a, b) => a - b)[Math.floor(scores.length / 2)];
-    const max = Math.max.apply(null, scores);
-    const min = Math.min.apply(null, scores);
-    const std = Math.sqrt(
-      scores.reduce((acc, cur) => acc + Math.pow(cur - average, 2), 0) / scores.length
-    );
-    return { full, average, median, max, min, std };
+    return {
+      full,
+      average: average(scores.length ? scores : [0]),
+      median: medianSorted(scores.length ? scores : [0]),
+      max: max(scores.length ? scores : [0]),
+      min: min(scores.length ? scores : [0]),
+      std: standardDeviation(scores.length ? scores : [0]),
+    };
   });
 
   return {

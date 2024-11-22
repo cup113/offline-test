@@ -16,8 +16,8 @@ const fullScoreDisplay = computed(() => {
   if (currentStat.value === undefined) {
     return '';
   }
-  const scores = currentStat.value.scores;
-  if (scores.length <= 1) {
+  const scores = currentStat.value.item.questions.map(q => q.score);
+  if (scores.length === 1) {
     return currentStat.value.fullScore.toString();
   }
   return `${scores.join(' + ')} = ${currentStat.value.fullScore}`;
@@ -47,7 +47,7 @@ function handle_stu_file(event: Event) {
     </div>
     <div class="flex flex-wrap justify-center gap-4">
       <div v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no" class="flex flex-col items-center" >
-        <Button :class="{ 'bg-green-600': current === item.no }">
+        <Button :class="{ 'bg-green-600': current === item.no, 'hover:bg-green-700': current === item.no }">
           {{ item.no }}
         </Button>
         <span>{{ ((store.questionStats.get(item.no)?.average ?? 0) / (store.questionStats.get(item.no)?.fullScore ?? 1) * 100).toFixed(0) }}%</span>

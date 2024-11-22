@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { computed } from 'vue';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,6 +9,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import Question from '@/components/Question.vue';
 
 const store = useStore();
+
+const inExam = computed(() => store.examCode !== '');
 
 function on_import(event: Event) {
   const files = (event.target as HTMLInputElement).files;
@@ -17,12 +21,12 @@ function on_import(event: Event) {
 <template>
   <div class="px-4">
     <div>
-      <Collapsible class="mt-2 rounded-xl px-4 py-2">
+      <Collapsible class="mt-2 rounded-xl px-4 py-2" :default-open="true">
         <CollapsibleTrigger class="w-full py-1 border-b border-slate-200">
-          <h2 class="text-xl font-bold text-center">此处输入试题代码</h2>
+          <h2 class="text-xl font-bold text-center">点击此处输入试题代码</h2>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <Textarea v-model="store.examCode" class="h-80" placeholder="Input your design code here" />
+          <Textarea v-model="store.examCode" class="h-80" placeholder="在此处输入试题代码..." />
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -47,7 +51,7 @@ function on_import(event: Event) {
       <div class="w-full flex gap-4">
         <Button @click="store.export_answers()" variant="outline"
           class="flex-grow text-xl font-bold text-lime-700">导出答案</Button>
-        <div class="flex gap-2 items-center border px-8 border-collapse rounded-lg">
+        <div class="flex gap-2 items-center border px-8 border-collapse rounded-lg" v-show="inExam">
           <div class="w-32">导入答案</div>
           <Input class="max-w-80" @click="on_import" type="file" accept=".json" />
         </div>

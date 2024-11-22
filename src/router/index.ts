@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import AboutView from '../views/AboutView.vue'
 import ExamView from '@/views/ExamView.vue'
 import MarkingView from '@/views/MarkingView.vue'
 import StatView from '@/views/StatView.vue'
@@ -9,11 +9,6 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Home',
-      component: HomeView
-    },
-    {
-      path: '/exam',
       name: 'Exam',
       component: ExamView,
     },
@@ -26,7 +21,12 @@ const router = createRouter({
       path: '/stat',
       name: 'Statistics',
       component: StatView,
-    }
+    },
+    {
+      path: '/about',
+      name: 'About',
+      component: AboutView
+    },
   ]
 })
 

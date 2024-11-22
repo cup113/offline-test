@@ -29,6 +29,9 @@ importers:
       radix-vue:
         specifier: ^1.8.3
         version: 1.8.3(vue@3.4.27(typescript@5.4.5))
+      simple-statistics:
+        specifier: ^7.8.7
+        version: 7.8.7
       tailwind-merge:
         specifier: ^2.3.0
         version: 2.3.0
@@ -946,6 +949,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  simple-statistics@7.8.7:
+    resolution: {integrity: sha512-ed5FwTNYvkMTfbCai1U+r3symP+lIPKWCqKdudpN4NFNMn9RtDlFtSyAQhCp4oPH0YBjWu/qnW+5q5ZkPB3uHQ==}
 
   source-map-js@1.2.0:
     resolution: {integrity: sha512-itJW8lvSA0TXEphiRoawsCksnlf8SyvmFzIhltqAHluXd88pkCd+cXJVHTDwdCr0IzwptSm035IHQktUu1QUMg==}
@@ -1886,6 +1892,8 @@ snapshots:
   shell-quote@1.8.1: {}
 
   signal-exit@4.1.0: {}
+
+  simple-statistics@7.8.7: {}
 
   source-map-js@1.2.0: {}
 

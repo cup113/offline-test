@@ -12,7 +12,7 @@ function clearLocalStorage() {
 
 <template>
   <div class="py-2 px-8">
-    <p>这里是Offline Test的首页，请点击上方“Exam”按钮开始测试。</p>
+    <p>关于Offline Test：请点击上方“Exam”按钮开始测试。</p>
     <Button @click="clearLocalStorage()" variant="destructive">清除本地缓存</Button>
   </div>
 </template>
