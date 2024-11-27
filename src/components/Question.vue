@@ -84,7 +84,7 @@ function update_choice_single(payload: string) {
 }
 
 function update_choice_multiple() {
-  const choices = Object.entries(value.choiceMultiple).filter(([, checked]) => checked).map(([choice, _]) => choice).join(MULTIPLE_SEPARATOR);
+  const choices = Object.entries(value.choiceMultiple).filter(([, checked]) => checked).map(([choice, _]) => choice).sort().join(MULTIPLE_SEPARATOR);
   update_value(choices);
 }
 

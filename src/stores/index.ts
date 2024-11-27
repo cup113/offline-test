@@ -5,7 +5,7 @@ import { downloadText } from 'download.js';
 import { Maybe } from 'true-myth/maybe';
 import { Result } from 'true-myth/result';
 import { z } from 'zod';
-import { min, max, mean, medianSorted, standardDeviation, sum, sampleCorrelation, average } from 'simple-statistics';
+import { min, max, medianSorted, standardDeviation, sampleCorrelation, average } from 'simple-statistics';
 
 export type ItemType = 'id' | 'heading' | 'name' | 'question'
 export type QuestionType = 'blank-text' | 'blank-number' | 'choice-single' | 'choice-multiple' | 'choice-indeterminate' | 'multiple-line-text';
@@ -371,17 +371,17 @@ export const useStore = defineStore('index', () => {
 
     questionItems.value.forEach((item) => {
       const markResults = get_item_mark_results(item.no);
-      const scores = markResults.map(({ score }) => score || 0);
+      const scores = markResults.map(({ score, names }) => names.map(() => score || 0)).flat();
       const fullScore = item.questions.reduce((acc, cur) => acc + cur.score, 0);
       const discrimination = (() => {
         if (scores.length < 2) {
           return null;
         }
         const studentsMap = new Map(markedStudents.value.map(s => [s.name, s.score] as const));
-        const scoreArr = new Array<[number, number]>(); // [totalScore, thisScore]
+        const scoreArr = new Array<[number, number]>(); // [totalScore - thisScore, thisScore]
         markResults.forEach(({ names, score }) => {
           names.forEach(name => {
-            scoreArr.push([studentsMap.get(name) ?? 0, score ?? 0] as const);
+            scoreArr.push([(studentsMap.get(name) ?? 0) - (score ?? 0), score ?? 0] as const);
           });
         });
         return sampleCorrelation(scoreArr.map(s => s[0]), scoreArr.map(s => s[1]));
@@ -396,7 +396,7 @@ export const useStore = defineStore('index', () => {
         min: min(scores.length ? scores : [0]),
         average: average(scores.length ? scores : [0]),
         std: standardDeviation(scores.length ? scores : [0]),
-        discrimination,
+        discrimination: isNaN(discrimination ?? NaN) ? 0 : discrimination,
         markProgress,
       });
     });

@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableRow, TableBody, TableHead } from '@/components/ui/table';
+import { Table, TableHeader, TableRow, TableBody, TableHead, TableCell } from '@/components/ui/table';
 import { computed, ref } from 'vue';
 import { useStore, Item } from '@/stores';
 import MarkAnswer from '@/components/MarkAnswer.vue';
 
 const store = useStore();
 
+const summaryView = ref(false);
 const current = ref(1);
 
 const currentStat = computed(() => store.questionStats.get(current.value));
@@ -44,6 +45,7 @@ function handle_stu_file(event: Event) {
   <div class="px-4 py-2 flex flex-col gap-4">
     <div class="flex items-center">
       <div class="w-32">考生答题文件</div><Input type="file" multiple @change="handle_stu_file"></Input>
+      <div><Button @click="summaryView = !summaryView">切换总览模式<!--TODO--></Button></div>
     </div>
     <div class="flex flex-wrap justify-center gap-4">
       <div v-for="item in store.items" :key="item.no" v-show="item.no !== Item.META_NO" @click="current = item.no" class="flex flex-col items-center" >

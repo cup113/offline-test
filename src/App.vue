@@ -12,7 +12,7 @@ const routes = router.options.routes;
       <NavigationMenuList>
         <NavigationMenuItem v-for="route in routes" :key="route.name">
           <NavigationMenuLink :class="navigationMenuTriggerStyle()">
-            <RouterLink :to="route.path">{{ route.name }}</RouterLink>
+            <RouterLink :to="route.path" v-if="route.name !== 'Paper'">{{ route.name }}</RouterLink>
           </NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>

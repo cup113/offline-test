@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Table, TableHeader, TableRow, TableCell, TableHead, TableBody } from '@/components/ui/table';
 import { useStore } from '@/stores';
+import { RouterLink } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -31,10 +32,10 @@ function on_import(event: Event) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        <TableRow v-for="(student, index) in store.markedStudents">
+        <TableRow v-for="student in store.markedStudents" :key="student.name">
           <TableCell>{{ student.rank }}</TableCell>
-          <TableCell>{{ student.name }}</TableCell>
-          <TableCell>{{ student.score }}</TableCell>
+          <TableCell><RouterLink :to="`/paper/${student.name}`" class="underline">{{ student.name }}</RouterLink></TableCell>
+          <TableCell class="font-bold">{{ student.score }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
