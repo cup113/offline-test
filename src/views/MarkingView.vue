@@ -27,7 +27,6 @@ const fullScoreDisplay = computed(() => {
 function handle_stu_file(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files) {
-    store.students.splice(0, store.students.length);
     Array.from(target.files).forEach(file => {
       file.text().then(text => {
         try {
