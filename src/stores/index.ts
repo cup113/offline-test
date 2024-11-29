@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { watch, reactive, ref, computed, type ComputedRef, type UnwrapRef } from 'vue';
+import { watchIgnorable } from '@vueuse/core';
 import { useLocalStorage, useArrayFilter } from '@vueuse/core';
 import { downloadText } from 'download.js';
 import { Maybe } from 'true-myth/maybe';
@@ -22,12 +23,20 @@ function split_once(str: string, separator: string): [string, string] {
 function use_dispersed_local_storage<T extends {}>(key: ComputedRef<string>, defaultValue: T) {
   const value = ref(defaultValue);
 
-  watch(key, () => {
-    const localValue = Maybe.of(localStorage.getItem(key.value));
-    value.value = localValue.mapOrElse(() => defaultValue, v => JSON.parse(v) as T) as UnwrapRef<T>;
-  }, { immediate: true });
-  watch(value, newValue => {
-    localStorage.setItem(key.value, JSON.stringify(newValue));
+  const { ignoreUpdates } = watchIgnorable(() => ({ key: key.value, value: value.value }), ({ key: newKey, value: newVal }, old) => {
+    if (old === undefined) {
+      const localValue = Maybe.of(localStorage.getItem(newKey));
+      value.value = localValue.mapOrElse(() => defaultValue, v => JSON.parse(v) as T) as UnwrapRef<T>;
+      return;
+    }
+    const keyChanged = newKey !== old.key;
+    if (keyChanged) {
+      const targetValue = Maybe.of(localStorage.getItem(newKey)).mapOrElse(() => defaultValue, v => JSON.parse(v) as T);
+      localStorage.setItem(newKey, JSON.stringify(targetValue));
+      ignoreUpdates(() => value.value = targetValue as UnwrapRef<T>);
+    } else {
+      localStorage.setItem(newKey, JSON.stringify(newVal));
+    }
   }, { immediate: true, deep: true });
 
   return value;
