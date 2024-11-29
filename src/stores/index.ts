@@ -298,7 +298,7 @@ export const useStore = defineStore('index', () => {
     if (index === -1) {
       return undefined;
     }
-    return examValues.value[index][questionNo - 1];
+    return (examValues.value[index] ?? [])[questionNo - 1];
   }
 
   function set_exam_value(itemNo: number, questionNo: number, value: string) {
@@ -320,7 +320,7 @@ export const useStore = defineStore('index', () => {
     if (index === -1) {
       return [];
     }
-    return markResults.value[index];
+    return markResults.value[index] ?? [];
   }
 
   function get_mark_result(itemNo: number, answer: string) {
@@ -406,7 +406,7 @@ export const useStore = defineStore('index', () => {
         average: average(scores.length ? scores : [0]),
         std: standardDeviation(scores.length ? scores : [0]),
         discrimination: isNaN(discrimination ?? NaN) ? 0 : discrimination,
-        markProgress,
+        markProgress: isNaN(markProgress) ? 0 : markProgress,
       });
     });
     return stats;

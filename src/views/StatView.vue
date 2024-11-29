@@ -23,7 +23,7 @@ function on_import(event: Event) {
       <div>最高分: <b>{{ store.overallStat.max }}</b>；中位分: <b>{{ store.overallStat.median }}</b>；最低分: <b>{{ store.overallStat.min }}</b>
       </div>
     </div>
-    <Table>
+    <Table class="w-fit mx-auto">
       <TableHeader>
         <TableRow>
           <TableHead>排名</TableHead>
@@ -33,9 +33,9 @@ function on_import(event: Event) {
       </TableHeader>
       <TableBody>
         <TableRow v-for="student in store.markedStudents" :key="student.name">
-          <TableCell>{{ student.rank }}</TableCell>
-          <TableCell><RouterLink :to="`/paper/${student.name}`" class="underline">{{ student.name }}</RouterLink></TableCell>
-          <TableCell class="font-bold">{{ student.score }}</TableCell>
+          <TableCell class="w-16">{{ student.rank }}</TableCell>
+          <TableCell class="w-48"><RouterLink :to="`/paper/${student.name}`" class="underline">{{ student.name }}</RouterLink></TableCell>
+          <TableCell class="w-16 font-bold">{{ student.score }}</TableCell>
         </TableRow>
       </TableBody>
     </Table>
